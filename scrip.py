@@ -4,6 +4,7 @@ import math
 import pandas as pd
 import datetime
 import calendar
+import copy
 
 
 meses = {1: 'janeiro', 2: 'fevereiro', 3: 'março', 4: 'abril', 5: 'maio', 6: 'junho', 7: 'julho', 8: 'agosto', 9: 'setembro', 10: 'outubro', 11: 'novembro', 12: 'dezembro'}
@@ -27,9 +28,11 @@ def organiza_dados(df):
     
     dados = []
     
-    for _, receita in df.iterrows():
+    for _, conta in df.iterrows():
         
-        dado = {"nome": receita['nome'],"vencimento":receita["vencimento"],"valor":receita["valor"],"tipo":receita["tipo"],"parcelas":receita["parcelas"], "primeira parcela":receita["primeira parcela"]}
+        if pd.isna(conta["vencimento"]):
+            conta["vencimento"] = 0
+        dado = {"nome": conta['nome'],"vencimento":conta["vencimento"],"valor":conta["valor"],"tipo":conta["tipo"],"parcelas":conta["parcelas"], "primeira parcela":conta["primeira parcela"]}
         dados.append(dado)
         
 
@@ -41,23 +44,23 @@ def calendario_do_ano():
     ano = datetime.datetime.now().year
     
     global meses
-    # meses = ['janeiro', 'fevereiro', 'marÃ§o', 'abril', 'maio', 'junho',
-    #      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'] 
-    
     dias_da_semana = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sabado', 'domingo']
     
-    calendario = calendar.Calendar()
+    calendario = calendar.Calendar(firstweekday=6)
     
    
     
+
     dias_do_ano = {}
     
     for mes in range(1,13):
         
         dias = []
-        
+        numero_semana = 1
         
         for dia in calendario.itermonthdates(ano, mes):
+            
+            print(dia)
             
             if dia.year == ano and dia.month == mes:    
                    
@@ -65,14 +68,24 @@ def calendario_do_ano():
                 
                 dia_da_semana = dias_da_semana[dia.weekday()]
                 
+                # Obtenha o número da semana dentro do mês
                 
+                
+               
                 data_formatada = {"semana":dia_da_semana, "dia": dia.day ,"mes":meses[mes]}
                 
                 
+                # print(numero_semana)
+                # print(data_formatada)
+                # print()
+
+                # print(numero_da_semana)
+                # print(data_formatada)
+            
                 dias.append(data_formatada)
-                
                
-                
+             
+         
         dias_do_ano[meses[mes]] = dias
     
     
@@ -81,8 +94,7 @@ def calendario_do_ano():
 
 def verifica_parcela(receitas, despesas):
     
-    global meses    
-    
+    global meses        
     
     for receita in receitas:
         
@@ -119,6 +131,10 @@ def verifica_parcela(receitas, despesas):
                  
             
         else:
+            receita["parcelas"] = False
+            if pd.isna(receita["primeira parcela"]) :
+                receita["primeira parcela"] = False
+            
             continue
         
  
@@ -171,27 +187,35 @@ def verifica_vencimentos(mes):
     receitas = contas["receitas"]
     despesas = contas["despesas"]
 
+
+       
 def linhas_planilha(receitas, despesas):
     
     calendario = calendario_do_ano()
     
+    receitas_copy = copy.deepcopy(receitas)
+    despesas_copy = copy.deepcopy(despesas)
+    
+
     linhas = {}
+    
     for mes in calendario.keys():
         linhas[mes] = ""
         
         for dia in calendario[mes]:
-            ...
-            for receita in receitas:
-                if dia['dia'] == receita['vencimento']:
-                    
-                    print(mes,receita)
             
-    print(calendario)
-
-    # print(calendario)
-    
-    # for mes in meses.values():
-    #     print(mes)
+            dia_mes = dia["dia"]
+            
+            for receita in receitas_copy:
+                dia_vencimento = int(receita["vencimento"])
+                
+                if dia_mes == dia_vencimento:
+                    # print(dia, receita)
+                    ...
+            
+        break   
+            
+            
 
 
 # verifica se o novo vencimento não tem na lista de contas
