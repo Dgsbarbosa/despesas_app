@@ -6,8 +6,11 @@ import datetime
 import calendar
 import copy
 import tkinter as tk
+from tkinter import filedialog
 import os
 from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+
 
 meses = {1: 'janeiro', 2: 'fevereiro', 3: 'março', 4: 'abril', 5: 'maio', 6: 'junho', 7: 'julho', 8: 'agosto', 9: 'setembro', 10: 'outubro', 11: 'novembro', 12: 'dezembro'}
 
@@ -40,8 +43,10 @@ def organiza_dados(df):
             
         if pd.isna(conta["tipo"]):    
             conta["tipo"] = "semanal"
+            
         if pd.isna(conta["parcelas"]) :
               conta["parcelas"] = 1
+              
         dado = {"nome": conta['nome'],"vencimento":int(conta["vencimento"]),"valor":conta["valor"],"tipo":conta["tipo"],"parcelas":int(conta["parcelas"]), "primeira parcela":conta["primeira parcela"]}
         dados.append(dado)
         
@@ -74,7 +79,7 @@ def calendario_do_ano():
                 if dia_da_semana == "domingo" or numero_semana == 0:
                     numero_semana += 1
                 
-                # Obtenha o nÃºmero da semana dentro do mÃªs  
+                # Obtenha o nÃƒÂºmero da semana dentro do mÃƒÂªs  
                
                 data_formatada = {"numero_semana":numero_semana,"dia_text":dia_da_semana, "dia": dia.day ,"mes":meses[mes]}
           
@@ -101,6 +106,7 @@ def verifica_parcela(receitas, despesas):
             qtd_parcelas = receita["parcelas"]
             mes_primeira_parcela = receita["primeira parcela"]
 
+            receita["valor"] = round(receita["valor"] / qtd_parcelas,2)
             
             for chave_mes, mes_do_ano in meses.items():
                                 
@@ -150,7 +156,7 @@ def verifica_parcela(receitas, despesas):
             
             qtd_parcelas = despesa["parcelas"]
             mes_primeira_parcela = despesa["primeira parcela"]
-            
+            despesa["valor"] = round(despesa["valor"] / qtd_parcelas,2)
             for chave_mes, mes_do_ano in meses.items():
                 
                 if mes_do_ano == mes_primeira_parcela:
@@ -247,6 +253,16 @@ def cria_dict_meses_semanas(calendario):
 
     return dict_meses
 
+def escolher_pasta():
+    
+    root = tk.Tk()
+    root.withdraw()
+
+    path = filedialog.asksaveasfile(initialfile="Despesas",defaultextension="xlsx",filetypes=[("Excel files","*xlsx")])
+    
+    
+    return path.name
+
 def linhas_planilha(receitas, despesas):
     
     calendario = calendario_do_ano()
@@ -284,8 +300,7 @@ def linhas_planilha(receitas, despesas):
                 
                 # print(dict_meses)
                 linha["dia"] = f"{dia['dia_text']}, {dia['dia']} de {dia['mes']}"
-                
-                
+             
                 # percorre a lista de despesa e verifica os venciementos
                 for receita in receitas_copy:
                     nome_receita = receita["nome"]
@@ -293,7 +308,8 @@ def linhas_planilha(receitas, despesas):
                     valor_receita = receita["valor"]
                     tipo_receita = receita["tipo"]
                     meses_parcela_receita = receita["meses"]
-
+                    
+                    
                     if dia_semana == vencimento_receita:
                         
                         if tipo_receita == "anual"  :
@@ -314,6 +330,8 @@ def linhas_planilha(receitas, despesas):
                         linha["valor_receita"] = receitas_semanais[0]["valor"] 
                         receitas_semanais.pop(0)
                     except:
+                        linha["nome_receita"]= ""
+                        linha["valor_receita"] = ""
                         pass    
                 
                 # percorre a lista de despesa e verifica os venciementos  
@@ -344,6 +362,9 @@ def linhas_planilha(receitas, despesas):
                         linha["valor_despesa"] = despesas_semanais[0]["valor"] 
                         despesas_semanais.pop(0)
                     except:
+                        linha["nome_despesa"] = ""
+                        linha["valor_despesa"] = ""
+                        
                         pass   
                     
                     
@@ -351,22 +372,11 @@ def linhas_planilha(receitas, despesas):
                 
             planilha[mes][numero_semana] = linhas
            
-        
-        
-    
-    # print()
-    
-    # for mes,semanas in planilha.items():
-    #     print(mes)
-    #     for semana, dias in semanas.items():
-    #         print(semana)
-    #         for dia in dias:
-    #             print(dia)
-                
-    # print(planilha)
+
+   
     return planilha
 
-# verifica se o novo vencimento nÃ£o tem na lista de contas
+# verifica se o novo vencimento nÃƒÂ£o tem na lista de contas
 def valida_vencimento(vencimento, lista_contas):
     
     for conta in lista_contas:
@@ -401,7 +411,7 @@ def elimina_datas_iguais(contas,nome_da_conta):
                         
             print(f"\nForam encontrados {len(vencimentos_iguais)} {nome_da_conta.lower()} com vencimento no dia: {int(vencimento)}")
             
-            print("\nNecessário trocar as datas...")
+            print("\nNecessario trocar as datas...")
             for i, vencimento_igual in enumerate(vencimentos_iguais):
                 
                 index = i + 1 
@@ -414,7 +424,7 @@ def elimina_datas_iguais(contas,nome_da_conta):
                 if escolha.isdigit() and 0 < int(escolha) <= len(vencimentos_iguais) :
                     break
                 else:
-                    print("\nEscolha um valor válido") 
+                    print("\nEscolha um valor valido") 
                     
                         
             item_escolhido = vencimentos_iguais[int(escolha) - 1]
@@ -449,7 +459,7 @@ def elimina_datas_iguais(contas,nome_da_conta):
                                 print(f"\nA conta {el['nome'].capitalize()} foi alterada para o dia: {novo_vencimento}")
                               
                     else:
-                        print(f"Ja há um vencimento no dia {novo_vencimento} na lista")    
+                        print(f"Ja hÃ¡ um vencimento no dia {novo_vencimento} na lista")    
                     
                
                 else:
@@ -460,19 +470,57 @@ def cria_planilha(linhas):
            
     ano = datetime.datetime.today().year        
     
+    wb = Workbook()
     
+    ws = wb.active
+    
+    wb.remove(ws)
     for mes,semanas in linhas.items():
-
-        ...
-        print("teste")
+        
+        ws = wb.create_sheet(mes.capitalize())
+        
+        # adiciona os cabeçalhos
+        ws.append([f"Semanas {ano}", "Nome da Receita", "Valor da Receita", "Planejamento", "Nome da Despesa", "Valor da Despesa"])
+        
+        # adiciona uma linha vasilha
+        ws.append([])
+        
     
-    # print(mes)
-    # for semana, dias in semanas.items():
-    #     print(semana)
-    #     for dia in dias:
-    #         print(dia)       
+        for semana, dias in semanas.items():
+            
+            ws.append([f"Semana {semana}"])
+            
+            # print(semana)
+            
+            for dia in dias:
                 
-     
+                # print(dia)
+                
+                
+                ws.append([dia["dia"],dia["nome_receita"],dia["valor_receita"],"",dia["nome_despesa"],dia["valor_despesa"]])
+
+            ws.append([])
+            
+    # Ajuste a largura das colunas
+        for coluna in ws.columns:
+            max_length = 0
+            coluna = [cell for cell in coluna]
+            for cell in coluna:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value) + 2
+                except:
+                    pass
+            ajuste_coluna = get_column_letter(coluna[0].column)  # Obtém a letra da coluna
+            ws.column_dimensions[ajuste_coluna].width = max_length     
+            
+    
+             
+    caminho = escolher_pasta()    
+    
+    wb.save(caminho)
+    
+    
 def main():
     
     # le o excel
@@ -483,7 +531,7 @@ def main():
     dados_despesas = organiza_dados(df_despesas)   
     
     
-    # verifica se o valor Ã© parcelado e adiciona os meses da parcela nos dados
+    # verifica se o valor ÃƒÂ© parcelado e adiciona os meses da parcela nos dados
     
     receitas, despesas = verifica_parcela(dados_receitas,dados_despesas)
     
