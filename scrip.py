@@ -10,7 +10,9 @@ from tkinter import filedialog
 import os
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
-
+import sys
+from tqdm import tqdm
+from time import sleep
 
 meses = {1: 'janeiro', 2: 'fevereiro', 3: 'março', 4: 'abril', 5: 'maio', 6: 'junho', 7: 'julho', 8: 'agosto', 9: 'setembro', 10: 'outubro', 11: 'novembro', 12: 'dezembro'}
 
@@ -258,8 +260,31 @@ def escolher_pasta():
     root = tk.Tk()
     root.withdraw()
 
-    path = filedialog.asksaveasfile(initialfile="Despesas",defaultextension="xlsx",filetypes=[("Excel files","*xlsx")])
-    
+    while True:
+        path = filedialog.asksaveasfile(initialfile="Despesas",defaultextension="xlsx",filetypes=[("Excel files","*xlsx")])
+        
+        if path == None:
+            sleep(1)
+            print("\nA escolha da pasta foi cancelada...\n")
+            sleep(1)
+            print("O que gostaria de fazer?")
+            
+            while True:
+                continuar = input("1- Escolher pasta\n2-Encerrar programa\n\nEscolha uma opção: ") 
+                if continuar == "1":
+                    break
+                elif continuar == "2":
+                    barra_progresso("Encerrando o programa")
+                    sys.exit()
+                else:
+                    print("\nDigite um valor valido\n")
+                    pass
+                                    
+            pass
+        else:
+            
+            
+            break
     
     return path.name
 
@@ -455,11 +480,12 @@ def elimina_datas_iguais(contas,nome_da_conta):
                                 el["vencimento"] = novo_vencimento 
                                 check= True
                                 opcoes.remove(int(novo_vencimento))
-                                
+                                print()
+                                barra_progresso("Alterando vencimento")
                                 print(f"\nA conta {el['nome'].capitalize()} foi alterada para o dia: {novo_vencimento}")
-                              
+                             
                     else:
-                        print(f"Ja hÃ¡ um vencimento no dia {novo_vencimento} na lista")    
+                        print(f"Ja há um vencimento no dia {novo_vencimento} na lista")    
                     
                
                 else:
@@ -480,7 +506,7 @@ def cria_planilha(linhas):
         ws = wb.create_sheet(mes.capitalize())
         
         # adiciona os cabeçalhos
-        ws.append([f"Semanas {ano}", "Nome da Receita", "Valor da Receita", "Planejamento", "Nome da Despesa", "Valor da Despesa"])
+        ws.append([f"Semanas {ano}", "Receita", "Valor", "Planejamento", "Despesa", "Valor"])
         
         # adiciona uma linha vasilha
         ws.append([])
@@ -516,44 +542,100 @@ def cria_planilha(linhas):
             
     
              
-    caminho = escolher_pasta()    
+        
     
-    wb.save(caminho)
+    try:
+        caminho = escolher_pasta()
+        wb.save(caminho)
+        print(f"\nSalvando em: {caminho}")
+    except :
+        print("Houve um erro no salvamento da planilha...")
+        sleep(1)
+        print("Verifique se não há um arquivo com o mesmo nome aberto, ou escolha outro nome...")
+        sleep(1)
+        cria_planilha(linhas)
+        
+
+def barra_progresso(nome):
     
+    nome = nome.capitalize()
+    for _ in tqdm(range(100),desc=nome,ncols=100,bar_format="{desc}: {bar} {percentage:3.0f}% "):
+        sleep(0.02)
+        
+def inicio():
     
+    # barra_progresso("Iniciando")
+    
+    # print("\nBem vindo ao organizador de contas mensais...")     
+    
+    while True:
+        iniciar = input("\nDeseja iniciar o programa? s(sim) ou n(não): ").lower()
+        
+        if iniciar == "s" or iniciar =="sim":
+            break
+        elif iniciar =="n" or iniciar =="não" or iniciar =="nao":
+            
+            encerrar = input("Deseja encerrar? s(sim) ou n(não): ").lower()     
+            
+            if encerrar == "s" or encerrar == "sim":
+                print()
+                barra_progresso("Encerrando o programa")
+                sys.exit()
+            else:
+                pass  
+        else:
+            print("Digite um valor valido")            
+
+        
 def main():
+    
     
     # le o excel
     df_receitas, df_despesas = ler_excel()
+    print()
+    barra_progresso("Lendo Planilha")
+    
     
     # organiza os dados
     dados_receitas = organiza_dados(df_receitas)
     dados_despesas = organiza_dados(df_despesas)   
+    print()
+    barra_progresso("Organizando dados")
     
     
-    # verifica se o valor ÃƒÂ© parcelado e adiciona os meses da parcela nos dados
-    
+    # verifica se o valor são parcelado e adiciona os meses da parcela nos dados    
     receitas, despesas = verifica_parcela(dados_receitas,dados_despesas)
+    print()
+    barra_progresso("Analisando parcelas")
     
     # elimina datas iguais
-    # elimina_datas_iguais(receitas,"Receitas")
-    # elimina_datas_iguais(despesas,"Despesas")
+    print()
+    barra_progresso("Verificando vencimentos")
+    
+    elimina_datas_iguais(receitas,"Receitas")
+    elimina_datas_iguais(despesas,"Despesas")
     
     # cria as linhas da planilha
+    
     linhas = linhas_planilha(receitas,despesas)
+    print()    
+    barra_progresso("Criando linhas da planilha")
+    
+    # criando e salvando a planilha
+    
     cria_planilha(linhas)
-    
-    
-    # for mes,semanas in planilha.items():
-    #     print(mes)
-    #     for semana, dias in semanas.items():
-    #         print(semana)
-    #         for dia in dias:
-    #             print(dia)
+      
+    barra_progresso("Salvando arquivo")
 
 if __name__ == "__main__":
+    
+    inicio()
+    
     main()
+    
+    sleep(1)
+    print("\nPlanilha gerada com sucesso...\n")
+    sleep(2)
+    barra_progresso('Encerrando o programa')
+    
 
-# calendario_do_ano()
-
-# verifica_vencimentos("janeiro")    
